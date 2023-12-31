@@ -1,0 +1,21 @@
+docker build -t my-image:tag .
+docker images
+docker rmi my-image:tag
+docker pull image-name:tag
+docker run -d --name my-container -p 5000:5000 my-image:tag
+docker ps
+docker stop my-container
+docker start my-container
+docker rm my-container
+docker network ls
+docker network inspect network-name
+docker-compose up -d
+docker-compose down
+docker-compose logs
+docker-compose up --build -d
+docker-compose up -d --scale service-name=2
+docker exec -it my-container /bin/bash
+docker run -it --rm my-image:tag command-to-run
+docker inspect my-container
+docker logs my-container
+docker system prune

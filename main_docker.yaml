@@ -1,0 +1,102 @@
+name: QA Testing and Deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build Project
+        run: yarn build
+
+      - name: Run Unit Tests
+        run: yarn test
+
+      - name: Code Analysis and Linting
+        run: yarn lint
+
+  deploy_to_testing:
+    needs: build_and_test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build Project
+        run: yarn build
+
+      - name: Run Unit Tests
+        run: yarn test
+
+      - name: Code Analysis and Linting
+        run: yarn lint
+
+      - name: Set Up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t my-app .
+          docker tag my-app:latest <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
+          docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/my-app:latest
+
+      - name: Deploy to AWS Testing Server
+        run: |
+          # Add your deployment script/commands here
+
+      - name: Notify QA
+        run: echo "Deployment to QA successful! QA can access the app at http://<Instance_IP>."
+
+      - name: Send Notification Email
+        uses: dawidd6/action-send-mail@v2
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "QA Testing Deployment Success"
+          body: "The QA testing deployment was successful. QA can access the app at http://<Instance_IP>."
+
+  manual_trigger_qa:
+    runs-on: ubuntu-latest
+    needs: deploy_to_testing
+
+    steps:
+      - name: Manual Trigger
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Trigger QA Deployment"
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          branch: main
+          force: true

@@ -1,0 +1,77 @@
+name: Staging Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy_to_staging:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build Project
+        run: yarn build
+
+      - name: Run Unit Tests
+        run: yarn test
+
+      - name: Code Analysis and Linting
+        run: yarn lint
+
+      - name: Set Up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Build and Push Docker Image for Staging
+        run: |
+          docker build -t my-app .
+          docker tag my-app:latest <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/my-app:staging
+          docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/my-app:staging
+
+      - name: Deploy to AWS Staging Server
+        run: |
+          # Add your deployment script/commands here
+
+      - name: Notify Team Members
+        run: echo "Deployment to Staging successful! Team members can access the app at http://<Instance_IP>."
+
+      - name: Send Notification Email
+        uses: dawidd6/action-send-mail@v2
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "Staging Deployment Success"
+          body: "The staging deployment was successful. Team members can access the app at http://<Instance_IP>."
+
+  manual_trigger_staging:
+    runs-on: ubuntu-latest
+    needs: deploy_to_staging
+
+    steps:
+      - name: Manual Trigger
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Trigger Staging Deployment"
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          branch: main
+          force: true
