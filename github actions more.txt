@@ -1,0 +1,116 @@
+name: Complex Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy_and_notify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up AWS SSH connection
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.AWS_HOST }}
+        username: ${{ secrets.AWS_USERNAME }}
+        key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+        port: ${{ secrets.AWS_SSH_PORT }}
+
+    - name: Execute Command on AWS Server
+      run: ssh -o StrictHostKeyChecking=no ${{ secrets.AWS_USERNAME }}@${{ secrets.AWS_HOST }} -p ${{ secrets.AWS_SSH_PORT }} "echo 'Hello from AWS server' > output.txt"
+
+    - name: Send Email Notification
+      uses: dawidd6/action-send-mail@v2
+      with:
+        server_address: ${{ secrets.SMTP_SERVER }}
+        server_port: ${{ secrets.SMTP_PORT }}
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: 'GitHub Actions Workflow Result'
+        to: ${{ secrets.RECIPIENT_EMAIL }}
+        from: ${{ secrets.EMAIL_USERNAME }}
+        body: 'The GitHub Actions workflow has completed successfully. Check the AWS server for details.'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Build Application
+        run: |
+          # Commands for compiling/building the application
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Run Tests
+        run: |
+          # Commands for running tests
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Deploy to Production
+        run: |
+          # Commands for deploying the application
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+
+jobs:
+  scheduled_task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Run Daily Task
+        run: |
+          # Commands for the scheduled task
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Run Tests
+        run: |
+          # Commands for running tests on different OS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Deploy to Production
+        run: |
+          # Commands for deploying the application to production
+
